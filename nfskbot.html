@@ -1,368 +1,436 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>NFSK Bot</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>NFSK Bot - Ask Anything</title>
 <style>
-  * { box-sizing: border-box; }
-  body { background:#B6B6B4; color:#fff; font-family:Arial,sans-serif; margin:0; min-height:100vh; display:flex; justify-content:center; align-items:center; padding:12px; }
-  .container { background:rgba(0,0,0,.65); border-radius:8px; padding:20px; box-shadow:0 20px 50px rgba(0,0,0,.5); width:100%; max-width:750px; height:85vh; display:flex; flex-direction:column; }
-  .title { font-size:2em; text-align:center; margin-bottom:12px; }
-  .row { display:flex; gap:10px; margin-bottom:10px; }
-  .row > * { flex:1; min-width:0; }
-  input, select, textarea, button { padding:12px; border:none; border-radius:5px; font-size:1em; font-family:inherit; }
-  button { background:#fff; color:#555; cursor:pointer; flex:0 0 auto; }
-  button:hover { background:#f0f0f0; }
-  #chat { flex:1; overflow-y:auto; display:flex; flex-direction:column; gap:10px; padding:10px; background:rgba(255,255,255,.08); border-radius:6px; margin-bottom:10px; }
-  .msg { padding:10px 14px; border-radius:8px; max-width:85%; line-height:1.45; white-space:pre-line; }
-  .user { align-self:flex-end; background:#fff; color:#333; }
-  .bot { align-self:flex-start; background:rgba(255,255,255,.15); border:1px solid #A0A0A0; }
-  .hint { font-size:.85em; color:#ccc; margin-top:6px; }
-  .hint span { text-decoration:underline; cursor:pointer; }
-  .error { color:#ff8080; margin-bottom:8px; font-size:.9em; }
-  button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible { outline:2px solid #fff; outline-offset:2px; }
+*{box-sizing:border-box}
+body{
+ margin:0;background:#101827;color:#eef2ff;
+ font-family:Arial,sans-serif;min-height:100vh;
+ display:flex;justify-content:center;align-items:center;padding:15px
+}
+.app{
+ width:100%;max-width:850px;height:90vh;min-height:520px;
+ background:#192438;border:1px solid #34445d;border-radius:18px;
+ display:flex;flex-direction:column;overflow:hidden;
+ box-shadow:0 20px 60px #0007
+}
+header{padding:20px;border-bottom:1px solid #34445d}
+header h1{margin:0;font-size:25px}
+header p{margin:7px 0 0;color:#aab9d1;font-size:14px}
+#chat{
+ flex:1;overflow-y:auto;padding:18px;
+ display:flex;flex-direction:column;gap:14px
+}
+.msg{
+ max-width:90%;padding:13px 15px;border-radius:13px;
+ line-height:1.6;white-space:pre-wrap;overflow-wrap:anywhere
+}
+.user{align-self:flex-end;background:#365fe9;color:white}
+.bot{align-self:flex-start;background:#25344b}
+.sources{margin-top:12px;border-top:1px solid #526178;padding-top:9px}
+.sources a{display:block;color:#91c7ff;margin:7px 0;overflow-wrap:anywhere}
+small{color:#afbdd2}
+footer{padding:15px;border-top:1px solid #34445d}
+textarea{
+ width:100%;resize:vertical;min-height:65px;max-height:180px;
+ padding:13px;background:#101827;color:white;border:1px solid #526178;
+ border-radius:10px;font:inherit
+}
+.controls{display:flex;gap:10px;margin-top:10px}
+button{
+ border:0;border-radius:9px;padding:12px 17px;
+ cursor:pointer;font-weight:bold
+}
+#send{background:#5278ff;color:white}
+#clear{background:#34445d;color:white}
+button:disabled{opacity:.5;cursor:wait}
+.status{color:#aab9d1;font-size:12px;margin-top:9px}
 </style>
 </head>
 <body>
-<div class="container">
-  <div class="title">Welcome to NFSK Bot</div>
-  <div class="row">
-    <input type="text" id="name" placeholder="Your name">
-    <select id="subject">
-      <option value="all">All subjects</option>
-      <option value="biology">Biology</option>
-      <option value="chemistry">Chemistry</option>
-      <option value="physics">Physics</option>
-      <option value="algebra">Algebra</option>
-      <option value="arithmetic">Arithmetic</option>
-      <option value="geometry">Geometry</option>
-      <option value="measurement">Measurement</option>
-      <option value="number system">Number System</option>
-    </select>
-  </div>
-  <div id="chat"><div class="msg bot">Hi! Ask me anything about Biology, Chemistry, Physics, Algebra, Arithmetic, Geometry, Measurement or the Number System. Capital letters, small letters, spelling mistakes and missing punctuation are all fine. You can also type sums like 12 + 5 * 3.</div></div>
-  <div id="err" class="error"></div>
-  <div class="row">
-    <textarea id="question" rows="2" placeholder="What is your question?"></textarea>
-    <button id="send">Send 📩</button>
-  </div>
+<div class="app">
+<header>
+<h1>🌐 NFSK Bot</h1>
+<p>Ask anything: maths, trigonometry, science, history,
+technology, programming and more. No subject selection.</p>
+</header>
+
+<div id="chat">
+<div class="msg bot">Hello! Ask me a question in uppercase or lowercase.
+I can search online encyclopedia articles, show sources,
+and solve supported mathematical calculations.
+
+Try: "What is photosynthesis?", "Explain geometry",
+"Solve 2x + 5 = 15", or "sin 30 degrees".</div>
+</div>
+
+<footer>
+<textarea id="question" placeholder="Ask anything..."
+aria-label="Your question"></textarea>
+<div class="controls">
+<button id="send">Ask NFSK Bot ↗</button>
+<button id="clear">Clear chat</button>
+</div>
+<div class="status" id="status">Ready · Online article search enabled</div>
+</footer>
 </div>
 
 <script>
-/* ---------- Knowledge base: each entry = [list of ways to ask, answer] ---------- */
-const KB = {
-biology: [
- [["which cell has cell membrane","what has a cell membrane"],"Both animal and plant cells have a cell membrane. It controls what enters and leaves the cell."],
- [["which cell has cell wall","what has a cell wall"],"Plant cells have a cell wall (also bacteria, fungi and algae). It is made of cellulose in plants and gives shape and support."],
- [["name the two types of cells","types of cells"],"Prokaryotic cells (no true nucleus, e.g. bacteria) and Eukaryotic cells (true nucleus, e.g. plants and animals)."],
- [["what is the control center of the cell","control centre of cell","brain of the cell"],"The nucleus is the control center of the cell."],
- [["two types of organisms","types of organisms"],"Unicellular (one cell, e.g. amoeba) and Multicellular (many cells, e.g. humans)."],
- [["powerhouse of the cell","what is mitochondria"],"The mitochondria is the powerhouse of the cell. It releases energy (ATP) from food."],
- [["what is photosynthesis","define photosynthesis"],"Photosynthesis is how green plants make food: carbon dioxide + water + sunlight (with chlorophyll) → glucose + oxygen."],
- [["what is chlorophyll","green pigment in plants"],"Chlorophyll is the green pigment in chloroplasts that absorbs sunlight for photosynthesis."],
- [["what is dna","full form of dna"],"DNA stands for Deoxyribonucleic Acid. It carries the genetic information of living things."],
- [["what is the basic unit of life","structural and functional unit of life"],"The cell is the basic structural and functional unit of life."],
- [["who discovered the cell","discoverer of cell"],"Robert Hooke discovered cells in 1665 while looking at cork under a microscope."],
- [["what is respiration","define respiration"],"Respiration is the process of releasing energy from food. Glucose + oxygen → carbon dioxide + water + energy."],
- [["which organ pumps blood","what does the heart do"],"The heart pumps blood around the body."],
- [["how many bones in human body","number of bones in adult human"],"An adult human has 206 bones."],
- [["what are the 5 senses","five senses","sense organs"],"Sight (eyes), hearing (ears), smell (nose), taste (tongue) and touch (skin)."],
- [["what is the largest organ of the human body","biggest organ"],"The skin is the largest organ of the human body."],
- [["what is a food chain","define food chain"],"A food chain shows who eats whom, e.g. grass → grasshopper → frog → snake → eagle."],
- [["what is an ecosystem"],"An ecosystem is a community of living things interacting with each other and their non-living surroundings."],
-],
-chemistry: [
- [["chemical formula for water","formula of water","what is the formula of water"],"The chemical formula of water is H2O."],
- [["chemical formula for salt","formula of common salt","formula of table salt"],"Common salt is sodium chloride, NaCl."],
- [["name the process in which the solid directly converts into gas","solid to gas directly","what is sublimation"],"Sublimation is the process in which a solid changes directly into a gas, e.g. camphor, dry ice."],
- [["name the two types of changes","types of changes"],"Physical change and Chemical change."],
- [["who was the first person to describe the process of fermentation","who discovered fermentation"],"Louis Pasteur showed that fermentation is caused by living microorganisms (yeast) in the 1850s–60s."],
- [["what is an atom","define atom"],"An atom is the smallest particle of an element that still has its chemical properties. It has protons, neutrons and electrons."],
- [["what is an element","define element"],"An element is a pure substance made of only one kind of atom, e.g. oxygen, iron, gold."],
- [["what is a compound","define compound"],"A compound is formed when two or more elements chemically combine in a fixed ratio, e.g. H2O, CO2."],
- [["what is a mixture","define mixture"],"A mixture has two or more substances physically mixed, which can be separated by physical methods, e.g. salt water."],
- [["what is the atomic number","define atomic number"],"The atomic number is the number of protons in an atom's nucleus."],
- [["chemical formula for carbon dioxide","formula of carbon dioxide"],"Carbon dioxide is CO2."],
- [["what is the ph of water","ph of pure water","what is neutral ph"],"Pure water has a pH of 7, which is neutral. Below 7 is acidic, above 7 is basic."],
- [["what is an acid","define acid"],"An acid is a sour-tasting substance that turns blue litmus red and has pH below 7, e.g. lemon juice, vinegar."],
- [["what is a base","define base","what is an alkali"],"A base is a bitter, soapy substance that turns red litmus blue and has pH above 7, e.g. baking soda, soap."],
- [["what are the three states of matter","states of matter"],"Solid, liquid and gas (plasma is a fourth state)."],
- [["what is the symbol of gold","gold symbol"],"The symbol of gold is Au."],
- [["what is the symbol of sodium","sodium symbol"],"The symbol of sodium is Na."],
- [["what is the symbol of iron","iron symbol"],"The symbol of iron is Fe."],
- [["what gas do we breathe in","what gas is most abundant in air"],"We breathe in oxygen (about 21% of air). Nitrogen is the most abundant gas in air (about 78%)."],
-],
-physics: [
- [["what is force","define force"],"Force is a push or a pull on an object. Its SI unit is the newton (N)."],
- [["what is the si unit of force","unit of force"],"The SI unit of force is the newton (N)."],
- [["what is gravity","define gravity","what is gravitational force"],"Gravity is the force by which objects attract each other. Earth's gravity pulls things toward its center (g ≈ 9.8 m/s²)."],
- [["what is the speed of light"],"The speed of light is about 3 × 10^8 m/s (300,000 km per second)."],
- [["what is the speed of sound in air"],"Sound travels at about 343 m/s in air at room temperature."],
- [["what is energy","define energy"],"Energy is the ability to do work. Its SI unit is the joule (J)."],
- [["what is work","define work"],"Work = Force × Distance moved in the direction of the force. Unit: joule."],
- [["what is power","define power"],"Power is the rate of doing work: Power = Work ÷ Time. Unit: watt (W)."],
- [["what is velocity","define velocity"],"Velocity is speed in a given direction. Velocity = Displacement ÷ Time."],
- [["what is speed","define speed","formula of speed"],"Speed = Distance ÷ Time. Unit: m/s."],
- [["what is acceleration","define acceleration"],"Acceleration is the rate of change of velocity: a = (v − u) ÷ t. Unit: m/s²."],
- [["newtons first law","what is newtons first law","law of inertia"],"An object stays at rest or keeps moving in a straight line at constant speed unless an unbalanced force acts on it."],
- [["newtons second law"],"Force = Mass × Acceleration (F = ma)."],
- [["newtons third law"],"For every action there is an equal and opposite reaction."],
- [["what is ohms law"],"Ohm's law: V = I × R. Voltage = Current × Resistance."],
- [["what is the unit of current","si unit of current"],"The SI unit of electric current is the ampere (A)."],
- [["what is the unit of resistance"],"The unit of resistance is the ohm (Ω)."],
- [["what is the unit of voltage","unit of potential difference"],"The unit of voltage is the volt (V)."],
- [["what is kinetic energy"],"Kinetic energy is the energy of motion: KE = ½ m v²."],
- [["what is potential energy"],"Potential energy is stored energy due to position or condition: PE = m g h."],
- [["what is density","formula of density"],"Density = Mass ÷ Volume. Unit: kg/m³."],
- [["what is pressure","formula of pressure"],"Pressure = Force ÷ Area. Unit: pascal (Pa)."],
-],
-algebra: [
- [["what is algebra","define algebra"],"Algebra uses letters (variables) like x and y to stand for unknown numbers in equations and expressions."],
- [["what is a variable","define variable"],"A variable is a letter, like x, that represents a number that can change or is unknown."],
- [["what is a constant","define constant"],"A constant is a fixed value that does not change, such as 5 or 3.14."],
- [["what is a coefficient"],"A coefficient is the number multiplied with a variable. In 7x, the coefficient is 7."],
- [["what is an equation","define equation"],"An equation is a statement that two expressions are equal, e.g. 2x + 3 = 11."],
- [["what is an expression","algebraic expression"],"An algebraic expression combines numbers, variables and operations, e.g. 3x + 5. It has no equals sign."],
- [["what is a polynomial","define polynomial"],"A polynomial is an expression with variables raised to whole-number powers, e.g. x² + 3x + 2."],
- [["what is a quadratic equation","define quadratic equation"],"A quadratic equation has the form ax² + bx + c = 0, where a ≠ 0."],
- [["quadratic formula","formula to solve quadratic equation"],"x = (−b ± √(b² − 4ac)) ÷ 2a"],
- [["what is a ab whole square","expand a plus b whole square","a plus b square formula"],"(a + b)² = a² + 2ab + b²"],
- [["a minus b whole square","a minus b square formula"],"(a − b)² = a² − 2ab + b²"],
- [["a square minus b square","difference of squares"],"a² − b² = (a + b)(a − b)"],
- [["how to solve linear equation","how do i solve for x"],"Do the same operation on both sides to get x alone. Example: 2x + 3 = 11 → 2x = 8 → x = 4."],
- [["what is a term","define term in algebra"],"A term is a single part of an expression, separated by + or −. In 3x + 5, the terms are 3x and 5."],
- [["what is a like term","like terms"],"Like terms have the same variable raised to the same power, e.g. 3x and 7x. They can be added or subtracted."],
- [["what is the degree of a polynomial"],"The degree is the highest power of the variable in the polynomial. x³ + 2x has degree 3."],
-],
-arithmetic: [
- [["what are the four basic operations","basic operations of arithmetic"],"Addition (+), subtraction (−), multiplication (×) and division (÷)."],
- [["what is bodmas","what is pemdas","order of operations"],"BODMAS: Brackets, Orders (powers), Division, Multiplication, Addition, Subtraction. Do them in that order."],
- [["what is a percentage","define percentage"],"A percentage is a fraction out of 100. Percentage = (Part ÷ Whole) × 100."],
- [["how to find percentage","how to calculate percentage"],"Percentage = (Part ÷ Whole) × 100. Example: 20 out of 50 → 20 ÷ 50 × 100 = 40%."],
- [["what is a fraction","define fraction"],"A fraction represents part of a whole, written as numerator over denominator, e.g. 3/4."],
- [["what is a decimal","define decimal"],"A decimal is a number with a decimal point separating whole and fractional parts, e.g. 3.75."],
- [["what is a ratio","define ratio"],"A ratio compares two quantities, e.g. 2:3. It tells how many times one is of the other."],
- [["what is a proportion"],"A proportion says two ratios are equal, e.g. 1:2 = 3:6."],
- [["what is average","how to find mean","what is mean"],"Average (mean) = Sum of all values ÷ Number of values."],
- [["what is simple interest","formula of simple interest"],"Simple Interest = (P × R × T) ÷ 100, where P = principal, R = rate %, T = time in years."],
- [["what is profit","formula of profit"],"Profit = Selling Price − Cost Price (when SP is more than CP)."],
- [["what is loss","formula of loss"],"Loss = Cost Price − Selling Price (when CP is more than SP)."],
- [["what is lcm","full form of lcm","how to find lcm"],"LCM is the Lowest Common Multiple: the smallest number that is a multiple of all the given numbers. LCM of 4 and 6 is 12."],
- [["what is hcf","what is gcd","how to find hcf"],"HCF (or GCD) is the Highest Common Factor: the largest number that divides all the given numbers. HCF of 12 and 18 is 6."],
-],
-geometry: [
- [["what is geometry","define geometry"],"Geometry is the branch of mathematics that studies shapes, sizes, angles and space."],
- [["what is a point"],"A point is an exact location with no length, width or height."],
- [["what is a line"],"A line extends endlessly in both directions and has no thickness."],
- [["what is an angle","define angle"],"An angle is formed when two rays meet at a common point called the vertex. It is measured in degrees."],
- [["what is an acute angle"],"An acute angle is less than 90°."],
- [["what is a right angle"],"A right angle is exactly 90°."],
- [["what is an obtuse angle"],"An obtuse angle is more than 90° but less than 180°."],
- [["what is a straight angle"],"A straight angle is exactly 180°."],
- [["what is the sum of angles of a triangle","angle sum property of triangle"],"The three angles of a triangle add up to 180°."],
- [["what is the sum of angles of a quadrilateral"],"The four angles of a quadrilateral add up to 360°."],
- [["what is the pythagoras theorem","pythagorean theorem"],"In a right-angled triangle, (hypotenuse)² = (base)² + (height)². Example: 3, 4, 5 → 9 + 16 = 25."],
- [["area of a circle","formula for area of circle"],"Area of a circle = π r²."],
- [["circumference of a circle","perimeter of a circle"],"Circumference = 2 π r (or π d)."],
- [["area of a triangle","formula for area of triangle"],"Area of a triangle = ½ × base × height."],
- [["area of a rectangle"],"Area of a rectangle = length × breadth. Perimeter = 2 (l + b)."],
- [["area of a square"],"Area of a square = side × side. Perimeter = 4 × side."],
- [["area of a parallelogram"],"Area of a parallelogram = base × height."],
- [["area of a trapezium","area of a trapezoid"],"Area of a trapezium = ½ × (sum of parallel sides) × height."],
- [["volume of a cube"],"Volume of a cube = side³. Surface area = 6 × side²."],
- [["volume of a cuboid"],"Volume of a cuboid = length × breadth × height."],
- [["volume of a sphere"],"Volume of a sphere = (4/3) π r³."],
- [["volume of a cylinder"],"Volume of a cylinder = π r² h."],
- [["volume of a cone"],"Volume of a cone = (1/3) π r² h."],
- [["how many sides does a hexagon have","sides of hexagon"],"A hexagon has 6 sides."],
- [["how many sides does a pentagon have","sides of pentagon"],"A pentagon has 5 sides."],
- [["how many sides does an octagon have","sides of octagon"],"An octagon has 8 sides."],
- [["what is the value of pi","what is pi"],"π (pi) is about 3.14159 (or 22/7 as an approximation). It is the ratio of a circle's circumference to its diameter."],
-],
-measurement: [
- [["what is the si unit of length","unit of length"],"The SI unit of length is the metre (m)."],
- [["what is the si unit of mass","unit of mass"],"The SI unit of mass is the kilogram (kg)."],
- [["what is the si unit of time","unit of time"],"The SI unit of time is the second (s)."],
- [["what is the si unit of temperature","unit of temperature"],"The SI unit of temperature is the kelvin (K). Celsius (°C) is commonly used."],
- [["how many centimetres in a metre","cm in a metre","centimeters in a meter"],"1 metre = 100 centimetres."],
- [["how many millimetres in a centimetre","mm in a cm"],"1 centimetre = 10 millimetres."],
- [["how many metres in a kilometre","meters in a kilometer"],"1 kilometre = 1000 metres."],
- [["how many grams in a kilogram"],"1 kilogram = 1000 grams."],
- [["how many millilitres in a litre","ml in a litre"],"1 litre = 1000 millilitres."],
- [["how many minutes in an hour"],"1 hour = 60 minutes."],
- [["how many seconds in a minute"],"1 minute = 60 seconds."],
- [["how many seconds in an hour"],"1 hour = 3600 seconds."],
- [["how many hours in a day"],"1 day = 24 hours."],
- [["how many days in a year","days in a leap year"],"A year has 365 days. A leap year has 366 days."],
- [["how many days in a week"],"1 week = 7 days."],
- [["how many inches in a foot"],"1 foot = 12 inches."],
- [["how many centimetres in an inch"],"1 inch = 2.54 centimetres."],
- [["how many feet in a yard"],"1 yard = 3 feet."],
- [["how many ounces in a pound"],"1 pound = 16 ounces."],
- [["how to convert celsius to fahrenheit","celsius to fahrenheit formula"],"°F = (°C × 9/5) + 32."],
- [["how to convert fahrenheit to celsius","fahrenheit to celsius formula"],"°C = (°F − 32) × 5/9."],
- [["what is the boiling point of water"],"Water boils at 100°C (212°F) at sea level."],
- [["what is the freezing point of water"],"Water freezes at 0°C (32°F)."],
- [["which instrument measures temperature","what measures temperature"],"A thermometer measures temperature."],
- [["which instrument measures length"],"A ruler or measuring tape measures length."],
- [["which instrument measures mass","what measures weight"],"A balance or weighing scale measures mass."],
-],
-"number system": [
- [["what are natural numbers","define natural numbers"],"Natural numbers are the counting numbers: 1, 2, 3, 4, …"],
- [["what are whole numbers","define whole numbers"],"Whole numbers are the natural numbers plus zero: 0, 1, 2, 3, …"],
- [["what are integers","define integers"],"Integers are all whole numbers and their negatives: …, −2, −1, 0, 1, 2, …"],
- [["what are rational numbers","define rational numbers"],"Rational numbers can be written as p/q where p and q are integers and q ≠ 0, e.g. 1/2, −3, 0.75."],
- [["what are irrational numbers","define irrational numbers"],"Irrational numbers cannot be written as a fraction. Their decimals never end or repeat, e.g. √2, π."],
- [["what are real numbers","define real numbers"],"Real numbers include all rational and irrational numbers."],
- [["what are prime numbers","define prime number"],"A prime number has exactly two factors: 1 and itself, e.g. 2, 3, 5, 7, 11."],
- [["what are composite numbers","define composite number"],"A composite number has more than two factors, e.g. 4, 6, 8, 9, 12."],
- [["is 1 a prime number","is 1 prime"],"No. 1 is neither prime nor composite because it has only one factor."],
- [["what is the smallest prime number","first prime number"],"2 is the smallest prime number, and the only even prime."],
- [["what are even numbers"],"Even numbers are divisible by 2: 0, 2, 4, 6, 8, …"],
- [["what are odd numbers"],"Odd numbers are not divisible by 2: 1, 3, 5, 7, 9, …"],
- [["what are perfect squares","what is a perfect square"],"A perfect square is a number that is the square of an integer: 1, 4, 9, 16, 25, 36, …"],
- [["what is a perfect number"],"A perfect number equals the sum of its proper factors. 6 = 1 + 2 + 3 and 28 are perfect numbers."],
- [["what is the smallest whole number"],"0 is the smallest whole number."],
- [["what is the smallest natural number"],"1 is the smallest natural number."],
- [["what are factors","define factors"],"Factors of a number are the numbers that divide it exactly. Factors of 12: 1, 2, 3, 4, 6, 12."],
- [["what are multiples","define multiples"],"Multiples of a number are what you get by multiplying it by 1, 2, 3, … Multiples of 3: 3, 6, 9, 12, …"],
- [["what are roman numerals","roman numerals"],"I = 1, V = 5, X = 10, L = 50, C = 100, D = 500, M = 1000."],
- [["what are the divisibility rules","divisibility rules"],"By 2: last digit even. By 3: digit sum divisible by 3. By 5: ends in 0 or 5. By 9: digit sum divisible by 9. By 10: ends in 0."],
-]
-};
+"use strict";
 
-/* ---------- Text cleaning & fuzzy matching ---------- */
-const STOP = new Set("a an the is are was were of in on to for and or what whats which who how do does did tell me about name define explain give please can you i my it its this that there has have with be by as at from kind type called mean means meaning".split(" "));
-const SYN = { centre:"center", metre:"meter", litre:"liter", millimetre:"millimeter", centimetre:"centimeter", kilometre:"kilometer", squared:"square", cm:"centimeter", mm:"millimeter", km:"kilometer", kg:"kilogram", ml:"milliliter" };
-
-function clean(t) {
-  return t.toLowerCase().replace(/[’']/g, "").replace(/[^a-z0-9\u00b2\u00b3+\-*/^.= ]/g, " ").replace(/\s+/g, " ").trim();
-}
-function stem(w) {
-  w = SYN[w] || w;
-  if (w.length > 4 && w.endsWith("ies")) return w.slice(0, -3) + "y";
-  if (w.length > 3 && w.endsWith("s") && !w.endsWith("ss")) return w.slice(0, -1);
-  return w;
-}
-function tokens(t) {
-  return clean(t).replace(/[+\-*/^=.]/g, " ").split(" ").filter(w => w && !STOP.has(w)).map(stem);
-}
-function lev(a, b) {
-  const m = a.length, n = b.length; if (!m) return n; if (!n) return m;
-  let prev = Array.from({length: n + 1}, (_, j) => j);
-  for (let i = 1; i <= m; i++) {
-    const cur = [i];
-    for (let j = 1; j <= n; j++) cur[j] = Math.min(prev[j] + 1, cur[j-1] + 1, prev[j-1] + (a[i-1] === b[j-1] ? 0 : 1));
-    prev = cur;
-  }
-  return prev[n];
-}
-function sameWord(a, b) {
-  if (a === b) return 1;
-  if (/^\d+$/.test(a) || /^\d+$/.test(b)) return 0;
-  const tol = Math.max(a.length, b.length) >= 8 ? 2 : Math.max(a.length, b.length) >= 4 ? 1 : 0;
-  return tol && lev(a, b) <= tol ? 0.85 : 0;
-}
-function similarity(qt, pt) {
-  if (!qt.length || !pt.length) return 0;
-  let hit = 0;
-  for (const p of pt) { let best = 0; for (const q of qt) best = Math.max(best, sameWord(q, p)); hit += best; }
-  let hitQ = 0;
-  for (const q of qt) { let best = 0; for (const p of pt) best = Math.max(best, sameWord(q, p)); hitQ += best; }
-  return (hit / pt.length + hitQ / qt.length) / 2;
-}
-
-const INDEX = [];
-for (const [subj, list] of Object.entries(KB))
-  for (const [phrases, ans] of list)
-    INDEX.push({ subj, ans, pts: phrases.map(tokens), title: phrases[0] });
-
-function search(question, subject) {
-  const qt = tokens(question);
-  let best = null;
-  for (const e of INDEX) {
-    let s = 0;
-    for (const pt of e.pts) s = Math.max(s, similarity(qt, pt));
-    if (subject !== "all" && e.subj === subject) s += 0.05;
-    if (!best || s > best.s) best = { s, e };
-  }
-  return best;
-}
-
-/* ---------- Calculator for arithmetic questions ---------- */
-function tryMath(q) {
-  let t = q.toLowerCase().replace(/[,?]/g, "")
-    .replace(/\bplus\b/g, "+").replace(/\bminus\b/g, "-").replace(/\b(times|multiplied by|x)\b/g, "*")
-    .replace(/\b(divided by|over)\b/g, "/").replace(/[×]/g, "*").replace(/[÷]/g, "/").replace(/\^/g, "**")
-    .replace(/(\d+(\.\d+)?)\s*%\s*of\s*(\d+(\.\d+)?)/g, "($1/100*$3)")
-    .replace(/square root of (\d+(\.\d+)?)/g, "Math.sqrt($1)").replace(/√\s*(\d+(\.\d+)?)/g, "Math.sqrt($1)")
-    .replace(/(\d+(\.\d+)?)\s*(squared)/g, "($1**2)").replace(/(\d+(\.\d+)?)\s*(cubed)/g, "($1**3)");
-  t = t.replace(/^(what is|whats|calculate|solve|find|compute|evaluate|how much is)\s+/, "").replace(/\s*=\s*\??$/, "").trim();
-  if (!/\d/.test(t) || !/[-+*/]|Math\.sqrt/.test(t)) return null;
-  if (!/^[\d\s+\-*/().]*(Math\.sqrt\([\d.]+\)[\d\s+\-*/().]*)*$/.test(t)) return null;
-  try {
-    const v = Function('"use strict";return (' + t + ")")();
-    if (typeof v !== "number" || !isFinite(v)) return "That calculation is not defined (for example, dividing by zero).";
-    return "Answer: " + Math.round(v * 1e9) / 1e9;
-  } catch (e) { return null; }
-}
-
-/* ---------- UI ---------- */
 const chat = document.getElementById("chat");
-function add(text, cls) {
-  const d = document.createElement("div");
-  d.className = "msg " + cls;
-  d.textContent = text;
-  chat.appendChild(d);
+const questionInput = document.getElementById("question");
+const sendButton = document.getElementById("send");
+const statusBox = document.getElementById("status");
+
+function addMessage(text, type, sources = []) {
+  const box = document.createElement("div");
+  box.className = "msg " + type;
+
+  const content = document.createElement("div");
+  content.textContent = text;
+  box.appendChild(content);
+
+  if (sources.length) {
+    const section = document.createElement("div");
+    section.className = "sources";
+    const heading = document.createElement("small");
+    heading.textContent = "Online sources:";
+    section.appendChild(heading);
+
+    for (const source of sources) {
+      const link = document.createElement("a");
+      link.href = source.url;
+      link.target = "_blank";
+      link.rel = "noopener noreferrer";
+      link.textContent = source.title;
+      section.appendChild(link);
+    }
+    box.appendChild(section);
+  }
+
+  chat.appendChild(box);
   chat.scrollTop = chat.scrollHeight;
-  return d;
+  return box;
 }
-function suggest(div, title) {
-  const h = document.createElement("div");
-  h.className = "hint";
-  h.append("Did you mean: ");
-  const s = document.createElement("span");
-  s.textContent = title;
-  s.onclick = () => { document.getElementById("question").value = title; ask(); };
-  h.appendChild(s);
-  h.append("?");
-  div.appendChild(h);
-}
-function ask() {
-  const name = document.getElementById("name").value.trim();
-  const subject = document.getElementById("subject").value;
-  const qEl = document.getElementById("question");
-  const question = qEl.value.trim();
-  const err = document.getElementById("err");
-  if (!question) { err.textContent = "Please type your question."; return; }
-  err.textContent = "";
-  add(question, "user");
-  qEl.value = "";
-  const hi = name ? name + ", " : "";
 
-  const math = tryMath(question);
-  if (math) { add(math, "bot"); return; }
+function normalize(text) {
+  return text.toLowerCase().trim()
+    .replace(/[’']/g, "")
+    .replace(/\s+/g, " ");
+}
 
-  if (/^(hi|hello|hey|hii+|good (morning|afternoon|evening))\b/.test(clean(question)) && tokens(question).length <= 2) {
-    add("Hello" + (name ? " " + name : "") + "! What would you like to learn today?", "bot"); return;
+/* Safe arithmetic parser: does not execute arbitrary JavaScript. */
+function calculate(expression) {
+  const s = expression.replace(/\s+/g, "");
+  let i = 0;
+
+  function expressionValue() {
+    let v = term();
+    while (s[i] === "+" || s[i] === "-") {
+      const op = s[i++];
+      const n = term();
+      v = op === "+" ? v + n : v - n;
+    }
+    return v;
   }
-  const r = search(question, subject);
-  if (r.s >= 0.6) {
-    let txt = r.e.ans;
-    if (subject !== "all" && r.e.subj !== subject) txt = "(This looks like a " + r.e.subj + " question.)\n" + txt;
-    add(txt, "bot");
-  } else if (r.s >= 0.38) {
-    const d = add(hi + "I'm not fully sure what you meant.", "bot");
-    suggest(d, r.e.title);
-  } else {
-    add(hi + "NFSK Bot is still learning this one. Try rephrasing it, choose a subject, or ask your teacher.", "bot");
+
+  function term() {
+    let v = power();
+    while (s[i] === "*" || s[i] === "/") {
+      const op = s[i++];
+      const n = power();
+      if (op === "/" && n === 0) throw Error("Division by zero");
+      v = op === "*" ? v * n : v / n;
+    }
+    return v;
+  }
+
+  function power() {
+    let v = unary();
+    if (s[i] === "^") {
+      i++;
+      v = Math.pow(v, power());
+    }
+    return v;
+  }
+
+  function unary() {
+    if (s[i] === "+") { i++; return unary(); }
+    if (s[i] === "-") { i++; return -unary(); }
+
+    if (s[i] === "(") {
+      i++;
+      const v = expressionValue();
+      if (s[i++] !== ")") throw Error("Missing closing bracket");
+      return v;
+    }
+
+    const match = s.slice(i).match(/^(?:\d+\.?\d*|\.\d+)/);
+    if (!match) throw Error("Invalid expression");
+    i += match[0].length;
+    return Number(match[0]);
+  }
+
+  const result = expressionValue();
+  if (i !== s.length || !Number.isFinite(result))
+    throw Error("Invalid or undefined calculation");
+  return result;
+}
+
+function mathAnswer(original) {
+  let q = normalize(original)
+    .replace(/,/g, "")
+    .replace(/[?=]+$/g, "")
+    .trim();
+
+  // Trigonometric questions, angles in degrees by default.
+  const trig = q.match(
+    /^(?:what is |calculate |find )?(sin|cos|tan)\s*(-?\d+(?:\.\d+)?)\s*(?:degrees?|deg|°)?$/
+  );
+
+  if (trig) {
+    const fn = trig[1];
+    const deg = Number(trig[2]);
+    const rad = deg * Math.PI / 180;
+
+    let result = Math[fn](rad);
+    if (fn === "tan" && Math.abs(result) > 1e12)
+      return "tan(" + deg + "°) is undefined.";
+
+    if (Math.abs(result) < 1e-12) result = 0;
+    result = Number(result.toFixed(10));
+
+    return fn + "(" + deg + "°) = " + result +
+      "\nAngle is interpreted in degrees.";
+  }
+
+  // Square roots and simple arithmetic.
+  let s = q
+    .replace(/^(what is |calculate |compute |evaluate |solve )/, "")
+    .replace(/what is /g, "")
+    .replace(/plus/g, "+")
+    .replace(/minus/g, "-")
+    .replace(/multiplied by|times/g, "*")
+    .replace(/divided by/g, "/")
+    .replace(/×/g, "*")
+    .replace(/÷/g, "/")
+    .replace(/\bsquared\b/g, "^2")
+    .replace(/\bcubed\b/g, "^3")
+    .trim();
+
+  const root = s.match(/^(?:square root of|sqrt)\s*(\d+(?:\.\d+)?)$/);
+  if (root) {
+    const n = Number(root[1]);
+    return n < 0 ? "The real square root is undefined for negative numbers."
+      : "√" + n + " = " + Math.sqrt(n);
+  }
+
+  if (/^[\d.+\-*/^() ]+$/.test(s) &&
+      /\d/.test(s) && /[+\-*/^]/.test(s)) {
+    try {
+      return "Answer: " + calculate(s);
+    } catch (_) {
+      return null;
+    }
+  }
+
+  return null;
+}
+
+/* Search Wikipedia article titles using its public REST API. */
+async function searchWikipedia(query) {
+  const url = "https://en.wikipedia.org/w/rest.php/v1/search/page?q=" +
+    encodeURIComponent(query) + "&limit=5";
+
+  const response = await fetch(url, {
+    headers: { "Accept": "application/json" }
+  });
+
+  if (!response.ok) throw Error("Article search unavailable");
+  const data = await response.json();
+  return (data.pages || []).map(p => ({
+    title: p.title,
+    description: p.description || "",
+    excerpt: (p.excerpt || "").replace(/<[^>]*>/g, ""),
+    url: p.key
+      ? "https://en.wikipedia.org/wiki/" + p.key
+      : "https://en.wikipedia.org/"
+  }));
+}
+
+/* Retrieve a page summary after discovering a matching article. */
+async function getSummary(title) {
+  const url = "https://en.wikipedia.org/api/rest_v1/page/summary/" +
+    encodeURIComponent(title.replace(/ /g, "_"));
+
+  const response = await fetch(url);
+  if (!response.ok) return null;
+
+  const data = await response.json();
+  if (!data.extract) return null;
+
+  return {
+    title: data.title || title,
+    extract: data.extract,
+    url: data.content_urls?.desktop?.page ||
+      "https://en.wikipedia.org/wiki/" +
+      encodeURIComponent(title.replace(/ /g, "_"))
+  };
+}
+
+async function answerQuestion(original) {
+  const q = normalize(original);
+
+  if (/^(hi|hello|hey|good morning|good afternoon|good evening)[!. ]*$/.test(q)) {
+    return {
+      text: "Hello! Ask me anything. What would you like to know?",
+      sources: []
+    };
+  }
+
+  const math = mathAnswer(original);
+  if (math) return { text: math, sources: [] };
+
+  statusBox.textContent = "Searching online articles...";
+
+  // First search for matching article titles and descriptions.
+  const pages = await searchWikipedia(original);
+
+  if (!pages.length) {
+    return {
+      text: "I couldn't find a matching Wikipedia article.\n\n" +
+        "Try rephrasing the question or open a general web search:\n" +
+        "https://www.google.com/search?q=" +
+        encodeURIComponent(original),
+      sources: [{
+        title: "Search the web for this question",
+        url: "https://www.google.com/search?q=" +
+          encodeURIComponent(original)
+      }]
+    };
+  }
+
+  // Select the best matching result based on title, description and excerpt.
+  const words = q.split(/[^a-z0-9]+/).filter(w => w.length > 2);
+  const scored = pages.map(page => {
+    const text = normalize(
+      page.title + " " + page.description + " " + page.excerpt
+    );
+    const score = words.reduce((n, word) =>
+      n + (text.includes(word) ? 1 : 0), 0);
+    return { page, score };
+  }).sort((a, b) => b.score - a.score);
+
+  // Retrieve up to two summaries to provide useful context.
+  const selected = scored.slice(0, 2);
+  const summaries = await Promise.all(
+    selected.map(item => getSummary(item.page.title)
+      .catch(() => null))
+  );
+
+  const usable = summaries.filter(Boolean);
+
+  if (!usable.length) {
+    return {
+      text: "I found possible articles, but couldn't retrieve their summaries. " +
+        "Open the sources below to read the information directly.",
+      sources: pages.map(p => ({ title: p.title, url: p.url }))
+    };
+  }
+
+  const text = usable.map(item =>
+    item.title + "\n" + item.extract
+  ).join("\n\n");
+
+  return {
+    text: text +
+      "\n\nNote: These are source summaries, not an AI-generated " +
+      "solution. For complex maths problems, provide the full question.",
+    sources: usable.map(item => ({
+      title: item.title,
+      url: item.url
+    }))
+  };
+}
+
+async function ask() {
+  const original = questionInput.value.trim();
+  if (!original || sendButton.disabled) return;
+
+  addMessage(original, "user");
+  questionInput.value = "";
+  sendButton.disabled = true;
+
+  const loading = addMessage("Looking for an answer...", "bot");
+
+  try {
+    const result = await answerQuestion(original);
+    loading.replaceChildren();
+
+    const text = document.createElement("div");
+    text.textContent = result.text;
+    loading.appendChild(text);
+
+    if (result.sources.length) {
+      const section = document.createElement("div");
+      section.className = "sources";
+      const label = document.createElement("small");
+      label.textContent = "Sources and further reading:";
+      section.appendChild(label);
+
+      result.sources.forEach(source => {
+        const a = document.createElement("a");
+        a.href = source.url;
+        a.target = "_blank";
+        a.rel = "noopener noreferrer";
+        a.textContent = source.title;
+        section.appendChild(a);
+      });
+
+      loading.appendChild(section);
+    }
+  } catch (error) {
+    loading.textContent =
+      "Online search failed. Check your internet connection, " +
+      "then try again. You can also search directly on Google.";
+
+    const a = document.createElement("a");
+    a.href = "https://www.google.com/search?q=" +
+      encodeURIComponent(original);
+    a.target = "_blank";
+    a.rel = "noopener noreferrer";
+    a.textContent = "Search this question on Google";
+    a.style.color = "#91c7ff";
+    a.style.display = "block";
+    a.style.marginTop = "12px";
+    loading.appendChild(a);
+  } finally {
+    sendButton.disabled = false;
+    statusBox.textContent = "Ready";
+    questionInput.focus();
   }
 }
-document.getElementById("send").onclick = ask;
-document.getElementById("question").addEventListener("keydown", e => {
-  if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); ask(); }
+
+sendButton.addEventListener("click", ask);
+
+questionInput.addEventListener("keydown", event => {
+  if (event.key === "Enter" && !event.shiftKey) {
+    event.preventDefault();
+    ask();
+  }
 });
+
+document.getElementById("clear").addEventListener("click", () => {
+  chat.replaceChildren();
+  addMessage("Chat cleared. Ask me anything!", "bot");
+});
+
+questionInput.focus();
 </script>
 </body>
 </html>
